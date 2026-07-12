@@ -57,7 +57,7 @@ def train_tf_model(
         tf.keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss",
             factor=0.5,
-            patience=10,
+            patience=CONFIG["patience"],
             min_lr=1e-6,
             verbose=1,
         ),

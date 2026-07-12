@@ -52,9 +52,9 @@ def main():
     best_test_signer = None
 
     for fold, test_signer in enumerate(unique_signers_shuffled):
-        print(f"\n{'='*60}")
-        print(f"FOLD {fold+1}/{N} — test: {test_signer}")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print(f"FOLD {fold + 1}/{N} — test: {test_signer}")
+        print(f"{'=' * 60}")
 
         train_val_paths = [
             p for p, s in zip(all_paths, all_signer_ids) if s != test_signer
@@ -62,9 +62,7 @@ def main():
         train_val_labels = [
             l for l, s in zip(all_labels, all_signer_ids) if s != test_signer
         ]
-        train_val_signer_ids = [
-            s for s in all_signer_ids if s != test_signer
-        ]
+        train_val_signer_ids = [s for s in all_signer_ids if s != test_signer]
         train_val_signers = sorted(set(train_val_signer_ids))
         k_folds = min(len(train_val_signers), 5)
 
@@ -81,9 +79,7 @@ def main():
             signer_ids=train_val_signer_ids,
         )
 
-        test_paths = [
-            p for p, s in zip(all_paths, all_signer_ids) if s == test_signer
-        ]
+        test_paths = [p for p, s in zip(all_paths, all_signer_ids) if s == test_signer]
         test_labels_list = [
             l for l, s in zip(all_labels, all_signer_ids) if s == test_signer
         ]
@@ -97,8 +93,10 @@ def main():
             shuffle=False,
             augment=False,
         )
-        print(f"  Train/val signers: {len(train_val_signers)} | "
-              f"Test: {test_signer} ({len(test_paths)} samples)")
+        print(
+            f"  Train/val signers: {len(train_val_signers)} | "
+            f"Test: {test_signer} ({len(test_paths)} samples)"
+        )
 
         input_dim = MODEL_INPUT_DIM
         CONFIG["num_classes"] = num_classes
@@ -126,10 +124,13 @@ def main():
 
         steps_per_epoch = tf.data.experimental.cardinality(train_ds).numpy()
         if steps_per_epoch < 0:
-            n_train = len([
-                p for p, s in zip(all_paths, all_signer_ids)
-                if s != test_signer and s not in signer_info["val_signers"]
-            ])
+            n_train = len(
+                [
+                    p
+                    for p, s in zip(all_paths, all_signer_ids)
+                    if s != test_signer and s not in signer_info["val_signers"]
+                ]
+            )
             steps_per_epoch = max(1, n_train // CONFIG["batch_size"])
 
         val_steps = tf.data.experimental.cardinality(val_ds).numpy()
@@ -137,19 +138,28 @@ def main():
             val_steps = None
 
         model, history_obj = train_tf_model(
-            train_ds, val_ds, CONFIG, num_classes, input_dim,
-            steps_per_epoch, val_steps,
+            train_ds,
+            val_ds,
+            CONFIG,
+            num_classes,
+            input_dim,
+            steps_per_epoch,
+            val_steps,
         )
 
         test_loss, test_acc = model.evaluate(test_ds)
         eval_results = evaluate_model(model, test_ds, label_encoder)
-        print(f"  >>> Fold {fold+1} test accuracy: {test_acc:.4f}")
+        print(f"  >>> Fold {fold + 1} test accuracy: {test_acc:.4f}")
 
-        fold_results.append({
-            "test_signer": test_signer,
-            "test_accuracy": float(test_acc),
-            "val_accuracy": float(max(history_obj.history.get("val_accuracy", [0]))),
-        })
+        fold_results.append(
+            {
+                "test_signer": test_signer,
+                "test_accuracy": float(test_acc),
+                "val_accuracy": float(
+                    max(history_obj.history.get("val_accuracy", [0]))
+                ),
+            }
+        )
 
         if test_acc > best_test_acc:
             best_test_acc = test_acc
@@ -160,19 +170,19 @@ def main():
             best_test_signer = test_signer
 
     test_accs = [r["test_accuracy"] for r in fold_results]
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"CROSS-VALIDATION RESULTS ({N} folds)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     for r in fold_results:
         print(f"  {r['test_signer']:<12}  test_acc={r['test_accuracy']:.4f}")
-    print(f"  {'─'*40}")
+    print(f"  {'─' * 40}")
     print(f"  Mean:   {np.mean(test_accs):.4f} ± {np.std(test_accs):.4f}")
     print(f"  Median: {np.median(test_accs):.4f}")
     print(f"  Best:   {best_test_signer} ({best_test_acc:.4f})")
 
-    print(f"\n{'='*60}")
-    print(f"Exporting best model (fold {best_fold_idx+1})")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print(f"Exporting best model (fold {best_fold_idx + 1})")
+    print(f"{'=' * 60}")
 
     model = best_model
     history_obj = best_history_obj
@@ -223,9 +233,7 @@ def main():
     print(f"  SavedModel → {saved_model_path}")
 
     tflite_path = OUTPUT_DIR / "model.tflite"
-    tflite_file, tflite_size = convert_saved_model_to_tflite(
-        saved_model_path, tflite_path, input_dim
-    )
+    convert_saved_model_to_tflite(saved_model_path, tflite_path)
 
     print("\nExporting self-contained TFLite (raw landmarks)...")
     export_selfcontained_tflite(
@@ -238,14 +246,20 @@ def main():
     print("\nBenchmarking TFLite...")
     tflite_bench = benchmark_tflite_model(tflite_path)
     if tflite_bench is not None:
-        print(f"  {tflite_bench['mean_ms']:.3f} ± {tflite_bench['std_ms']:.3f} ms "
-              f"({tflite_bench['fps']:.1f} fps)")
+        print(
+            f"  {tflite_bench['mean_ms']:.3f} ± {tflite_bench['std_ms']:.3f} ms "
+            f"({tflite_bench['fps']:.1f} fps)"
+        )
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("BISINDO SIGN LANGUAGE RECOGNITION — PIPELINE COMPLETE")
-    print(f"{'='*60}")
-    print(f"\nFinal cross-val accuracy: {np.mean(test_accs):.4f} ± {np.std(test_accs):.4f}")
-    print(f"Best model (fold {best_fold_idx+1}): {best_test_signer} = {best_test_acc:.4f}")
+    print(f"{'=' * 60}")
+    print(
+        f"\nFinal cross-val accuracy: {np.mean(test_accs):.4f} ± {np.std(test_accs):.4f}"
+    )
+    print(
+        f"Best model (fold {best_fold_idx + 1}): {best_test_signer} = {best_test_acc:.4f}"
+    )
     print(f"\nOutput files in {OUTPUT_DIR}/")
 
 

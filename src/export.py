@@ -48,7 +48,7 @@ def load_weights_from_savedmodel(model, saved_model_dir):
                 src_base, src_rest = src_parts
                 dst_base, dst_rest = p.rsplit("/", 1)
                 if src_rest == dst_rest and src_base.startswith(dst_base + "_"):
-                    suffix = src_base[len(dst_base):]
+                    suffix = src_base[len(dst_base) :]
                     if suffix.lstrip("_").isdigit():
                         dst_var.assign(src_map[src_name].read_value())
                         matched = True
@@ -63,9 +63,6 @@ def load_weights_from_savedmodel(model, saved_model_dir):
     else:
         print("  All weights loaded successfully.")
     return len(model.weights) - len(unmatched)
-
-
-
 
 
 def export_selfcontained_tflite(
@@ -134,13 +131,15 @@ def export_selfcontained_tflite(
     )(raw_input)
     # Step 2: NaN → 0, then normalise ALL values
     normalized = tf.keras.layers.Lambda(
-        lambda x, m_val=tf.constant(m), s_val=tf.constant(s):
-            (tf.where(tf.math.is_nan(x), tf.zeros_like(x), x) - m_val) / (s_val + 1e-8),
+        lambda x, m_val=tf.constant(m), s_val=tf.constant(s): (
+            (tf.where(tf.math.is_nan(x), tf.zeros_like(x), x) - m_val) / (s_val + 1e-8)
+        ),
         name="normalize",
     )(raw_input)
     # Step 3: zero-out NaN/padding positions after normalisation
     masked_normalized = tf.keras.layers.Lambda(
-        lambda x: x[0] * x[1], name="apply_mask",
+        lambda x: x[0] * x[1],
+        name="apply_mask",
     )([normalized, valid_mask])
     # Step 4: concat features + mask
     preprocessed = tf.keras.layers.Concatenate(axis=-1, name="feat_mask_concat")(
@@ -167,9 +166,7 @@ def export_selfcontained_tflite(
     return tflite_path, size_mb
 
 
-def convert_saved_model_to_tflite(
-    saved_model_dir, output_path, input_dim
-):
+def convert_saved_model_to_tflite(saved_model_dir, output_path):
     """Convert TensorFlow SavedModel to TFLite format."""
     print("Converting to TFLite...")
 
@@ -189,7 +186,7 @@ def convert_saved_model_to_tflite(
 
         size_mb = len(tflite_model) / (1024 * 1024)
         print(f"TFLite model saved to {output_path} ({size_mb:.2f} MB)")
-        return output_path, size_mb
+        return
     except Exception as e:
         print(f"TFLite Conversion failed: {e}")
         raise e
